@@ -1,0 +1,82 @@
+version: "3.8"
+
+services:
+  postgres:
+    image: postgres:15
+    container_name: n8n_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: n8n
+      POSTGRES_PASSWORD: n8npass
+      POSTGRES_DB: n8n
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  n8n:
+    image: n8nio/n8n:latest
+    container_name: n8n_postgres_app
+    restart: unless-stopped
+    ports:
+      - "5678:5678"
+    environment:
+      - DB_TYPE=postgresdb
+      - DB_POSTGRESDB_HOST=postgres
+      - DB_POSTGRESDB_PORT=5432
+      - DB_POSTGRESDB_DATABASE=n8n
+      - DB_POSTGRESDB_USER=n8n
+      - DB_POSTGRESDB_PASSWORD=n8npass
+
+      - N8N_BASIC_AUTH_ACTIVE=true
+      - N8N_BASIC_AUTH_USER=admin
+      - N8N_BASIC_AUTH_PASSWORD=admin
+
+      - N8N_HOST=localhost
+      - N8N_PORT=5678
+      - N8N_PROTOCOL=http
+      - NODE_ENV=production
+
+    depends_on:
+      - postgres
+
+volumes:
+  postgres_data:
+
+
+
+# 1) Criar rede Docker
+# docker network create n8n_net
+
+# 2) Criar volume do Postgres
+# docker volume create n8n_postgres_data
+
+# 3) Subir o Postgres
+# docker run -d \
+#   --name n8n_postgres \
+#   --network n8n_net \
+#   -e POSTGRES_USER=n8n \
+#   -e POSTGRES_PASSWORD=n8npass \
+#   -e POSTGRES_DB=n8n \
+#   -v n8n_postgres_data:/var/lib/postgresql/data \
+#   --restart unless-stopped \
+#   postgres:15
+
+# 4) Subir o n8n apontando para o Postgres
+# docker run -d \
+#   --name n8n_postgres_app \
+#   --network n8n_net \
+#   -p 5678:5678 \
+#   -e DB_TYPE=postgresdb \
+#   -e DB_POSTGRESDB_HOST=n8n_postgres \
+#   -e DB_POSTGRESDB_PORT=5432 \
+#   -e DB_POSTGRESDB_DATABASE=n8n \
+#   -e DB_POSTGRESDB_USER=n8n \
+#   -e DB_POSTGRESDB_PASSWORD=n8npass \
+#   -e N8N_BASIC_AUTH_ACTIVE=true \
+#   -e N8N_BASIC_AUTH_USER=admin \
+#   -e N8N_BASIC_AUTH_PASSWORD=admin \
+#   -e N8N_HOST=localhost \
+#   -e N8N_PORT=5678 \
+#   -e N8N_PROTOCOL=http \
+#   -e NODE_ENV=production \
+#   --restart unless-stopped \
+#   n8nio/n8n:latest
